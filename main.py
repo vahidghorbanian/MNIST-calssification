@@ -18,4 +18,4 @@ result_lr = lr_classifier(train, test)
 result_dt = dt_classifier(train, test)
 result_rf = rf_calssifier(train, test)
 result_Ada = Ada_calssifier(train, test)
-    
+results_svm = SVM_classifier(train, test)
