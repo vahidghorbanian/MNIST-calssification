@@ -6,6 +6,7 @@ Various classifiers are tested to classify the MNIST dataset as follows:
 - Decision Trees
 - Random Forest
 - AdaBoost
+- SVM
 - Neural Network
 - Convolutional Neural Network
 
