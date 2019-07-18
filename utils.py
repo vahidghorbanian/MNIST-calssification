@@ -5,8 +5,11 @@ import os
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras import regularizers
-from tensorflow.keras.layers import Dense, Flatten
-from tensorflow.nn import sigmoid, softmax, relu
+#from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.nn import sigmoid, softmax 
+import keras
+from keras.layers import Dense, Flatten, Input, Conv2D, MaxPooling2D, Dropout
+from keras.models import Model, Sequential
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import metrics
 from sklearn.metrics import classification_report
@@ -43,7 +46,7 @@ def load_dataset(dataset = "training", path = "."):
 
 #%%
 num_train = 60000
-num_test = 1000
+num_test = 10000
 iter = 1000
 random_state = 0
 def lr_classifier(train, test):
@@ -193,7 +196,12 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
     test_img = test_img[0:num_test,:]
     train_lbl = train_lbl[0:num_train]
     test_lbl = test_lbl[0:num_test]
-    num_h = [500]
+    # convert class vectors to binary class matrices
+    num_classes = 10
+    train_lbl = keras.utils.to_categorical(train_lbl, num_classes)
+    test_lbl = keras.utils.to_categorical(test_lbl, num_classes)
+    
+    num_h = 64
     epochs = 200
     l1_val = 0.0
     l2_val = 0.0
@@ -206,40 +214,90 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
     weight = []
     hist= []
     reg = regularizers.l1_l2(l1=l1_val, l2=l2_val)
-    model = [tf.keras.Sequential([Flatten(input_shape=(np.shape(train_img)[1], np.shape(train_img)[2])),
-                                  Dense(64, activation=sigmoid, kernel_regularizer=reg),
-                                  Dense(64, activation=sigmoid, kernel_regularizer=reg),
-                                  Dense(10, activation=tf.nn.sigmoid)])]
-    for j, m in enumerate(model):
-        num_layer = len(m.layers)          
-        for i, n in enumerate(num_h):
-            for k in np.arange(1, num_layer-1, 1):
-                m.get_layer(index=k).units = n
-#            models.append(m)
-            print('\nnum.dense layers= ', num_layer-2,' num.neurons=', n, ' l1=', l1_val, ' l2=', l2_val)
-            m.compile(optimizer='Adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-            if earlystop == False:
-                print('Early Stopping deactivated!')
-                hist.append(m.fit(train_img, train_lbl, epochs=epochs))
-            else:
-                print('Early Stopping activated!')
-                callbacks = [EarlyStopping(monitor='val_loss', patience=5)]
-                hist.append(m.fit(train_img, train_lbl, epochs=epochs, callbacks=callbacks,
-                      validation_split =0.2, shuffle=False))
-            print('\ncalculate test score')
-            score.append(m.evaluate(test_img, test_lbl))
-            predict.append(m.predict(test_img))
-            w.append(m.get_weights())
-        score_test.append(score)
-        weight.append(w)
+    model = Sequential()
+    model.add(Flatten(input_shape=(np.shape(train_img)[1], np.shape(train_img)[2])))
+    model.add(Dense(num_h, activation=sigmoid, kernel_regularizer=reg))
+    model.add(Dense(num_h, activation=sigmoid, kernel_regularizer=reg))
+    model.add(Dense(10, activation=tf.nn.softmax)) 
+
+    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    if earlystop == False:
+        print('Early Stopping deactivated!')
+        hist.append(m.fit(train_img, train_lbl, epochs=epochs))
+    else:
+        print('Early Stopping activated!')
+        callbacks = [EarlyStopping(monitor='val_loss', patience=10)]
+        hist.append(model.fit(train_img, train_lbl, epochs=epochs, callbacks=callbacks,
+                     validation_split =0.2, shuffle=False))
+    print('\ncalculate test score')
+    score_test = model.evaluate(test_img, test_lbl)
+    predict = model.predict(test_img)
+    w = model.get_weights()
     print('number of hidden units:', num_h)
     print('test scores:\n', list(score_test))
     return {'model': model, 'num_hidden_units': num_h, 'test_score': score_test,
             'prediction': predict, 'test_lbl': test_lbl, 'test_img': test_img,
             'weights': weight, 'history': hist}
+    
+    
+# %%
+def convNN_classifier(train_img, train_lbl, test_img, test_lbl):
+    print('\n******************************************')
+    print('fully connected neural net is running...')
+    # train = train[0:num_train,:]
+    train_img = train_img[0:num_train,:]
+    test_img = test_img[0:num_test,:]
+    train_lbl = train_lbl[0:num_train]
+    test_lbl = test_lbl[0:num_test]
+    
+    # Reshape for channel_last
+    train_img = train_img.reshape(train_img.shape[0], 28, 28, 1)
+    test_img = test_img.reshape(test_img.shape[0], 28, 28, 1)
+    
+    # cobvert to float32 and normalize to 1
+    train_img = train_img.astype('float32')
+    test_img = test_img.astype('float32')
+    train_img /= 255
+    test_img /= 255
+    input_shape = (28, 28, 1)
+    
+    # convert class vectors to binary class matrices
+    num_classes = 10
+    train_lbl = keras.utils.to_categorical(train_lbl, num_classes)
+    test_lbl = keras.utils.to_categorical(test_lbl, num_classes)
+    
+    # Build Conv2dNN model
+    batch_size = 128
+    epochs = 12
 
+    model = Sequential()
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(num_classes, activation='softmax'))
+    
+    model.compile(loss=keras.losses.categorical_crossentropy,
+              optimizer=keras.optimizers.Adadelta(),
+              metrics=['accuracy'])
 
-
+    model.fit(train_img, train_lbl,
+              batch_size=batch_size,
+              epochs=epochs,
+              verbose=1,
+              validation_split=0.2,
+              validation_data=None)
+    
+    score_test = model.evaluate(test_img, test_lbl, verbose=0)
+    predict = model.predict(test_img)
+    print(score_test)
+    
+    return 0
+    
 
 
 

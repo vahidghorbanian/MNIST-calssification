@@ -22,33 +22,34 @@ print('Note that the number of training and test samples should be reduced to ru
 #result_rf = rf_calssifier(train, test)
 #result_Ada = Ada_calssifier(train, test)
 #result_svm = SVM_classifier(train, test)
-result_nn = nn_classifier(train_img, train_lbl, test_img, test_lbl)
+#result_nn = nn_classifier(train_img, train_lbl, test_img, test_lbl)
+convNN_classifier(train_img, train_lbl, test_img, test_lbl)
 
 #%% Plot NN results
-print('\nThe results are only plotted for the first trained NN model.')
-
-# Plot losses vs epoch
-h = result_nn['history'][0].history
-epoch = np.arange(1, len(h['loss'])+1, 1)
-plt.figure()
-plt.plot(epoch, h['loss'])
-plt.plot(epoch, h['val_loss'])
-plt.legend(['train_loss', 'val_loss'])
-
-# Plot some of misclassified samples
-predict_lbl = np.argmax(result_nn['prediction'][0],axis=1)
-test_lbl = result_nn['test_lbl']
-diff = np.nonzero(test_lbl-predict_lbl)[0]
-row = 7
-col = np.floor(len(diff)/row)
-plt.figure(figsize=(15,8))
-for i in np.arange(0,row*col,1):
-    plt.subplot(row, col, i+1)
-    plt.imshow(test_img[diff[int(i)]])
-    plt.tight_layout
-    plt.xlabel('as:'+str(predict_lbl[diff[int(i)]]))
-    plt.xticks([])
-    plt.yticks([])
-plt.suptitle('Misclassified Samples')
-plt.show()
+#print('\nThe results are only plotted for the first trained NN model.')
+#
+## Plot losses vs epoch
+#h = result_nn['history'][0].history
+#epoch = np.arange(1, len(h['loss'])+1, 1)
+#plt.figure()
+#plt.plot(epoch, h['loss'])
+#plt.plot(epoch, h['val_loss'])
+#plt.legend(['train_loss', 'val_loss'])
+#
+## Plot some of misclassified samples
+#predict_lbl = np.argmax(result_nn['prediction'][0],axis=1)
+#test_lbl = result_nn['test_lbl']
+#diff = np.nonzero(test_lbl-predict_lbl)[0]
+#row = 7
+#col = np.floor(len(diff)/row)
+#plt.figure(figsize=(15,8))
+#for i in np.arange(0,row*col,1):
+#    plt.subplot(row, col, i+1)
+#    plt.imshow(test_img[diff[int(i)]])
+#    plt.tight_layout
+#    plt.xlabel('as:'+str(predict_lbl[diff[int(i)]]))
+#    plt.xticks([])
+#    plt.yticks([])
+#plt.suptitle('Misclassified Samples')
+#plt.show()
     
