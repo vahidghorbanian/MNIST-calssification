@@ -270,6 +270,7 @@ def convNN_classifier(train_img, train_lbl, test_img, test_lbl):
     batch_size = 128
     epochs = 12
 
+
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape))
     model.add(MaxPooling2D(pool_size=(2, 2)))

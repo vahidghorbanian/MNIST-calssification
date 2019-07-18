@@ -2,6 +2,7 @@ from utils import *
 import pickle
 import matplotlib.pyplot as plt
 
+
 # %% Read and Load data
 #train_img, train_lbl, train = load_dataset(dataset = "training", path = ".")
 #test_img, test_lbl, test = load_dataset(dataset = "testing", path = ".")
