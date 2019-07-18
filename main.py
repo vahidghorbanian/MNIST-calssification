@@ -14,7 +14,7 @@ test_img = example_dict['test_img']
 train_lbl = example_dict['train_lbl']
 test_lbl = example_dict['test_lbl']
 
-
+print('Note that the number of training and test samples should be reduced to run the algorithm faster. ')
 # %% classifications
 #result_lr = lr_classifier(train, test)
 #result_knn = knn_classifier(train, test)
@@ -25,7 +25,17 @@ test_lbl = example_dict['test_lbl']
 result_nn = nn_classifier(train_img, train_lbl, test_img, test_lbl)
 
 #%% Plot NN results
-print('\nThe results are only plotted for the firsted trained NN model.')
+print('\nThe results are only plotted for the first trained NN model.')
+
+# Plot losses vs epoch
+h = result_nn['history'][0].history
+epoch = np.arange(1, len(h['loss'])+1, 1)
+plt.figure()
+plt.plot(epoch, h['loss'])
+plt.plot(epoch, h['val_loss'])
+plt.legend(['train_loss', 'val_loss'])
+
+# Plot some of misclassified samples
 predict_lbl = np.argmax(result_nn['prediction'][0],axis=1)
 test_lbl = result_nn['test_lbl']
 diff = np.nonzero(test_lbl-predict_lbl)[0]

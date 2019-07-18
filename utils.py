@@ -44,7 +44,7 @@ def load_dataset(dataset = "training", path = "."):
 #%%
 num_train = 60000
 num_test = 1000
-iter = 500
+iter = 1000
 random_state = 0
 def lr_classifier(train, test):
     print('\n******************************************')
@@ -193,8 +193,8 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
     test_img = test_img[0:num_test,:]
     train_lbl = train_lbl[0:num_train]
     test_lbl = test_lbl[0:num_test]
-    num_h = [400]
-    epochs = 30
+    num_h = [500]
+    epochs = 200
     l1_val = 0.0
     l2_val = 0.0
     earlystop = True
@@ -204,11 +204,12 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
     predict = []
     w = []
     weight = []
+    hist= []
     reg = regularizers.l1_l2(l1=l1_val, l2=l2_val)
     model = [tf.keras.Sequential([Flatten(input_shape=(np.shape(train_img)[1], np.shape(train_img)[2])),
                                   Dense(64, activation=sigmoid, kernel_regularizer=reg),
                                   Dense(64, activation=sigmoid, kernel_regularizer=reg),
-                                  Dense(10, activation=tf.nn.softmax)])]
+                                  Dense(10, activation=tf.nn.sigmoid)])]
     for j, m in enumerate(model):
         num_layer = len(m.layers)          
         for i, n in enumerate(num_h):
@@ -219,23 +220,23 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
             m.compile(optimizer='Adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
             if earlystop == False:
                 print('Early Stopping deactivated!')
-                m.fit(train_img, train_lbl, epochs=epochs)
+                hist.append(m.fit(train_img, train_lbl, epochs=epochs))
             else:
                 print('Early Stopping activated!')
-                callbacks = [EarlyStopping(monitor='val_loss', patience=2)]
-                m.fit(train_img, train_lbl, epochs=epochs, callbacks=callbacks,
-                      validation_split =0.2, shuffle=False)
+                callbacks = [EarlyStopping(monitor='val_loss', patience=5)]
+                hist.append(m.fit(train_img, train_lbl, epochs=epochs, callbacks=callbacks,
+                      validation_split =0.2, shuffle=False))
+            print('\ncalculate test score')
             score.append(m.evaluate(test_img, test_lbl))
             predict.append(m.predict(test_img))
             w.append(m.get_weights())
         score_test.append(score)
         weight.append(w)
-    print('models:\n', model)
-    print('number of hidden units:\n', num_h)
-    print('test scores:\n', score_test)
+    print('number of hidden units:', num_h)
+    print('test scores:\n', list(score_test))
     return {'model': model, 'num_hidden_units': num_h, 'test_score': score_test,
             'prediction': predict, 'test_lbl': test_lbl, 'test_img': test_img,
-            'weights': weight}
+            'weights': weight, 'history': hist}
 
 
 
