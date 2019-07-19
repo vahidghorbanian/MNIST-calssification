@@ -2,14 +2,18 @@ import pandas as pd
 import numpy as np
 import struct
 import os
+import matplotlib.pyplot as plt
+import h5py
+
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras import regularizers
-#from tensorflow.keras.layers import Dense, Flatten
 from tensorflow.nn import sigmoid, softmax 
 import keras
 from keras.layers import Dense, Flatten, Input, Conv2D, MaxPooling2D, Dropout
 from keras.models import Model, Sequential
+from keras import backend as K
+
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import metrics
 from sklearn.metrics import classification_report
@@ -49,6 +53,8 @@ num_train = 60000
 num_test = 10000
 iter = 1000
 random_state = 0
+K.clear_session()
+
 def lr_classifier(train, test):
     print('\n******************************************')
     print('Logistic Regression is running...')
@@ -206,13 +212,6 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
     l1_val = 0.0
     l2_val = 0.0
     earlystop = True
-    model = []
-    score = []
-    score_test = []
-    predict = []
-    w = []
-    weight = []
-    hist= []
     reg = regularizers.l1_l2(l1=l1_val, l2=l2_val)
     model = Sequential()
     model.add(Flatten(input_shape=(np.shape(train_img)[1], np.shape(train_img)[2])))
@@ -227,8 +226,8 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
     else:
         print('Early Stopping activated!')
         callbacks = [EarlyStopping(monitor='val_loss', patience=10)]
-        hist.append(model.fit(train_img, train_lbl, epochs=epochs, callbacks=callbacks,
-                     validation_split =0.2, shuffle=False))
+        hist = model.fit(train_img, train_lbl, epochs=epochs, callbacks=callbacks,
+                     validation_split =0.2, shuffle=True)
     print('\ncalculate test score')
     score_test = model.evaluate(test_img, test_lbl)
     predict = model.predict(test_img)
@@ -237,13 +236,13 @@ def nn_classifier(train_img, train_lbl, test_img, test_lbl):
     print('test scores:\n', list(score_test))
     return {'model': model, 'num_hidden_units': num_h, 'test_score': score_test,
             'prediction': predict, 'test_lbl': test_lbl, 'test_img': test_img,
-            'weights': weight, 'history': hist}
+            'weights': w, 'history': hist}
     
     
 # %%
 def convNN_classifier(train_img, train_lbl, test_img, test_lbl):
     print('\n******************************************')
-    print('fully connected neural net is running...')
+    print('Convolutional neural net is running...')
     # train = train[0:num_train,:]
     train_img = train_img[0:num_train,:]
     test_img = test_img[0:num_test,:]
@@ -269,12 +268,11 @@ def convNN_classifier(train_img, train_lbl, test_img, test_lbl):
     # Build Conv2dNN model
     batch_size = 128
     epochs = 12
-
-
+    
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape))
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(Conv2D(64, (5, 5), activation='relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.5))
     model.add(Flatten())
@@ -282,22 +280,33 @@ def convNN_classifier(train_img, train_lbl, test_img, test_lbl):
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation='softmax'))
     
-    model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adadelta(),
+    model.compile(loss='categorical_crossentropy',
+              optimizer='Adadelta',
               metrics=['accuracy'])
+    
+    checkpointer = ModelCheckpoint(filepath="best_weights.hdf5", 
+                               monitor = 'val_acc',
+                               verbose=1, 
+                               save_best_only=True)
 
-    model.fit(train_img, train_lbl,
-              batch_size=batch_size,
-              epochs=epochs,
-              verbose=1,
-              validation_split=0.2,
-              validation_data=None)
+    hist = model.fit(train_img, train_lbl,
+                     batch_size=batch_size, 
+                     epochs=epochs,
+                     verbose=1,
+                     callbacks=[checkpointer],
+                     validation_split=0.2,
+                     validation_data=None)
     
     score_test = model.evaluate(test_img, test_lbl, verbose=0)
     predict = model.predict(test_img)
     print(score_test)
-    
-    return 0
+    model.load_weights('best_weights.hdf5')
+    weights = model.get_weights()
+    layer_outputs = [layer.output for layer in model.layers]
+    activation_model = keras.models.Model(inputs=model.input, outputs=layer_outputs)
+    return {'model': model, 'test_score': score_test, 'prediction': predict,
+            'test_lbl': test_lbl, 'test_img': test_img, 'history': hist,
+            'activation_model': activation_model}
     
 
 
