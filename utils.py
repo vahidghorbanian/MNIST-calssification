@@ -48,13 +48,14 @@ def load_dataset(dataset = "training", path = "."):
     return img, lbl, mat
 
 
-#%%
+#%% Initialization
 num_train = 60000
-num_test = 10000
+num_test = 1000
 iter = 1000
 random_state = 0
 K.clear_session()
 
+#%%
 def lr_classifier(train, test):
     print('\n******************************************')
     print('Logistic Regression is running...')
@@ -189,7 +190,8 @@ def SVM_classifier(train, test):
             print('run time: ', elapsed_time)
             count = count + 1
         score_test.append(score)
-    print('Test scores: ', score_test)
+        print('Test score: ', score)
+#    print('Test scores: ', score_test)
     return {'model': model, 'test score': score_test}
 
 
@@ -267,7 +269,7 @@ def convNN_classifier(train_img, train_lbl, test_img, test_lbl):
     
     # Build Conv2dNN model
     batch_size = 128
-    epochs = 12
+    epochs = 3
     
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape))

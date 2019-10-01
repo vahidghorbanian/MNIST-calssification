@@ -1,11 +1,14 @@
 from utils import *
 import pickle
 
-
-
 # %% Read and Load data
+# Uncomment either the following two lines OR the next 8 lines in order to read and load data 
+
+# METHOD 1
 #train_img, train_lbl, train = load_dataset(dataset = "training", path = ".")
-#test_img, test_lbl, test = load_dataset(dataset = "testing", path = ".")
+#test_img, test_lbl, test    = load_dataset(dataset = "testing", path = ".")
+
+# METHOD 2
 pickle_in = open("data.pickle","rb")
 example_dict = pickle.load(pickle_in)
 train = example_dict['train']
@@ -15,15 +18,19 @@ test_img = example_dict['test_img']
 train_lbl = example_dict['train_lbl']
 test_lbl = example_dict['test_lbl']
 
-print('Note that the number of training and test samples should be reduced to run the algorithm faster. ')
+print('Note that the number of training and test samples should be reduced to run the algorithm faster.')
+print('This can be done in the Initialization section of utils.py')
+print('\nNumber of training samples = ', num_train)
+print('Number of test samples = ', num_test)
+
 # %% classifications
-#result_lr = lr_classifier(train, test)
-#result_knn = knn_classifier(train, test)
-#result_dt = dt_classifier(train, test)
-#result_rf = rf_calssifier(train, test)
-#result_Ada = Ada_calssifier(train, test)
-#result_svm = SVM_classifier(train, test)
-#result_nn = nn_classifier(train_img, train_lbl, test_img, test_lbl)
+result_lr  = lr_classifier(train, test)
+result_knn = knn_classifier(train, test) 
+result_dt  = dt_classifier(train, test)
+result_rf  = rf_calssifier(train, test)
+result_Ada = Ada_calssifier(train, test)
+result_svm = SVM_classifier(train, test)
+result_nn  = nn_classifier(train_img, train_lbl, test_img, test_lbl)
 result_cnn = convNN_classifier(train_img, train_lbl, test_img, test_lbl)
 
 #%% Visualize CNN results
